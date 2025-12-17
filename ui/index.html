@@ -1,0 +1,128 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8" />
+  <title>Local RAG Chat (Streaming)</title>
+  <style>
+    body { font-family: system-ui, Arial; margin: 16px; max-width: 920px; }
+    .row { display: flex; gap: 8px; align-items: center; }
+    input[type="text"] { flex: 1; padding: 10px; }
+    button { padding: 10px 12px; cursor: pointer; }
+    #log { white-space: pre-wrap; border: 1px solid #3333; padding: 12px; margin-top: 12px; min-height: 240px; }
+    .small { opacity: 0.7; font-size: 12px; }
+    .card { border: 1px solid #3333; padding: 12px; border-radius: 10px; margin-top: 12px; }
+    pre { white-space: pre-wrap; }
+  </style>
+</head>
+<body>
+  <h2>Local RAG Chat</h2>
+  <div class="small">Streaming UI using SSE. Upload docs per session, then chat.</div>
+
+  <div class="card">
+    <h3>Upload</h3>
+    <div class="row">
+      <input id="file" type="file" />
+      <button onclick="upload()">Upload</button>
+      <button onclick="clearIndex()">Clear Index (this session)</button>
+    </div>
+    <div class="small">Uses the current session_id from the box below.</div>
+    <pre id="uploadStatus" class="small"></pre>
+  </div>
+
+  <div class="card">
+    <h3>Chat</h3>
+    <div class="row">
+      <input id="session" type="text" value="test1" placeholder="session_id" />
+      <label class="small"><input id="stream" type="checkbox" checked /> stream</label>
+    </div>
+
+    <div class="row" style="margin-top:8px;">
+      <input id="q" type="text" placeholder="Ask something..." />
+      <button onclick="ask()">Send</button>
+      <button onclick="clearLog()">Clear</button>
+    </div>
+
+    <div id="log"></div>
+  </div>
+
+<script>
+  let es = null;
+
+  function log(text) {
+    const el = document.getElementById("log");
+    el.textContent += text;
+    el.scrollTop = el.scrollHeight;
+  }
+
+  function clearLog() {
+    document.getElementById("log").textContent = "";
+  }
+
+  async function upload() {
+    const f = document.getElementById("file").files[0];
+    const status = document.getElementById("uploadStatus");
+    const session = document.getElementById("session").value.trim() || "test1";
+
+    if (!f) { status.textContent = "Pick a file first."; return; }
+
+    status.textContent = "Uploading...";
+    const fd = new FormData();
+    fd.append("session_id", session);
+    fd.append("file", f);
+
+    const res = await fetch("/upload", { method: "POST", body: fd });
+    const j = await res.json();
+    status.textContent = JSON.stringify(j, null, 2);
+  }
+
+  async function clearIndex() {
+    const status = document.getElementById("uploadStatus");
+    const session = document.getElementById("session").value.trim() || "test1";
+    status.textContent = "Clearing session index...";
+    const res = await fetch(`/index/clear?session_id=${encodeURIComponent(session)}`, { method: "POST" });
+    const j = await res.json();
+    status.textContent = JSON.stringify(j, null, 2);
+    log(`\n[Index cleared for session: ${session}]\n`);
+  }
+
+  async function ask() {
+    const session = document.getElementById("session").value.trim() || "test1";
+    const query = document.getElementById("q").value.trim();
+    const stream = document.getElementById("stream").checked;
+
+    if (!query) return;
+
+    log(`\n\n> ${query}\n`);
+
+    if (es) { es.close(); es = null; }
+
+    if (!stream) {
+      const res = await fetch("/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ session_id: session, query })
+      });
+      const j = await res.json();
+      log(j.answer + "\n");
+      log("\nSources:\n" + JSON.stringify(j.sources, null, 2) + "\n");
+      if (j.active_file) log("\nActive file: " + j.active_file + "\n");
+      return;
+    }
+
+    const url = `/chat/stream?session_id=${encodeURIComponent(session)}&query=${encodeURIComponent(query)}`;
+    es = new EventSource(url);
+
+    es.onmessage = (evt) => {
+      if (evt.data === "[START]" || evt.data === "[END]") return;
+      log(evt.data.replaceAll("\\n", "\n"));
+    };
+
+    es.onerror = () => {
+      es.close();
+      es = null;
+      log("\n[stream closed]\n");
+    };
+  }
+</script>
+</body>
+</html>
