@@ -1,12 +1,36 @@
+# ═══════════════════════════════════════════════════════════════════════════════
+# Local RAG Chat API - Docker Compose
+# ═══════════════════════════════════════════════════════════════════════════════
+# Usage:
+#   GPU:  docker compose up --build
+#   CPU:  docker compose -f docker-compose.yml up --build (remove deploy section)
+
 services:
   rag-api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: rag-api
     ports:
       - "8000:8000"
     volumes:
+      # Persist data across restarts
       - ./data:/app/data
     environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - OLLAMA_MODEL=mistral
       - NVIDIA_VISIBLE_DEVICES=all
+    extra_hosts:
+      # Allow container to access host's Ollama
+      - "host.docker.internal:host-gateway"
+    restart: unless-stopped
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+    # GPU support (comment out for CPU-only)
     deploy:
       resources:
         reservations:
@@ -14,3 +38,26 @@ services:
             - driver: nvidia
               count: all
               capabilities: [gpu]
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Optional: Run Ollama in Docker alongside the API
+# ═══════════════════════════════════════════════════════════════════════════════
+# Uncomment to run Ollama in Docker instead of host
+
+#   ollama:
+#     image: ollama/ollama:latest
+#     container_name: ollama
+#     ports:
+#       - "11434:11434"
+#     volumes:
+#       - ollama_data:/root/.ollama
+#     deploy:
+#       resources:
+#         reservations:
+#           devices:
+#             - driver: nvidia
+#               count: all
+#               capabilities: [gpu]
+#
+# volumes:
+#   ollama_data:

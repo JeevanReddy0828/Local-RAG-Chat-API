@@ -1,17 +1,56 @@
-fastapi
-uvicorn[standard]
-transformers
-torch
-sentence-transformers
-faiss-cpu
-numpy
-pydantic
-python-multipart
+# ═══════════════════════════════════════════════════════════════════════════════
+# Core Framework
+# ═══════════════════════════════════════════════════════════════════════════════
+fastapi>=0.100.0
+uvicorn[standard]>=0.23.0
+pydantic>=2.0.0
+pydantic-settings>=2.0.0
 
-# Mistral 7B 4-bit on GPU
-accelerate
-bitsandbytes
+# ═══════════════════════════════════════════════════════════════════════════════
+# PyTorch + CUDA
+# ═══════════════════════════════════════════════════════════════════════════════
+# For CUDA 12.1 (recommended for GPU acceleration)
+# Install with: pip install torch --index-url https://download.pytorch.org/whl/cu121
+torch>=2.4.0
 
-# Streaming + fallback + eval
-requests
-rapidfuzz
+# For CPU-only (uncomment and comment out above):
+# torch>=2.4.0 --index-url https://download.pytorch.org/whl/cpu
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# ML / Embeddings
+# ═══════════════════════════════════════════════════════════════════════════════
+sentence-transformers>=2.2.0
+transformers>=4.30.0
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Vector Store
+# ═══════════════════════════════════════════════════════════════════════════════
+# For CPU:
+faiss-cpu>=1.7.4
+# For GPU (uncomment and comment out above):
+# faiss-gpu>=1.7.4
+
+numpy>=1.24.0
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Document Parsing
+# ═══════════════════════════════════════════════════════════════════════════════
+python-docx>=0.8.11
+python-multipart>=0.0.6
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# LLM Client
+# ═══════════════════════════════════════════════════════════════════════════════
+requests>=2.28.0
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Evaluation
+# ═══════════════════════════════════════════════════════════════════════════════
+rapidfuzz>=3.0.0
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# GPU Acceleration (Optional - for quantized models)
+# ═══════════════════════════════════════════════════════════════════════════════
+# Uncomment for 4-bit/8-bit quantization support:
+# accelerate>=0.20.0
+# bitsandbytes>=0.40.0

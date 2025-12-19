@@ -1,1 +1,3 @@
-{"question":"...","expected_answer":"...","expected_source":"file.txt"}
+{"question": "Summarize the document", "expected_answer": "A comprehensive overview of the document's main content", "expected_source": ""}
+{"question": "What are the main topics covered?", "expected_answer": "The key themes and subjects discussed in the document", "expected_source": ""}
+{"question": "What is this document about?", "expected_answer": "An overview describing the document's purpose and content", "expected_source": ""}

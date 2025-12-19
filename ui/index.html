@@ -1,128 +1,467 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-  <meta charset="utf-8" />
-  <title>Local RAG Chat (Streaming)</title>
-  <style>
-    body { font-family: system-ui, Arial; margin: 16px; max-width: 920px; }
-    .row { display: flex; gap: 8px; align-items: center; }
-    input[type="text"] { flex: 1; padding: 10px; }
-    button { padding: 10px 12px; cursor: pointer; }
-    #log { white-space: pre-wrap; border: 1px solid #3333; padding: 12px; margin-top: 12px; min-height: 240px; }
-    .small { opacity: 0.7; font-size: 12px; }
-    .card { border: 1px solid #3333; padding: 12px; border-radius: 10px; margin-top: 12px; }
-    pre { white-space: pre-wrap; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Local RAG Chat</title>
+    <style>
+        :root {
+            --primary: #2563eb;
+            --primary-hover: #1d4ed8;
+            --success: #16a34a;
+            --danger: #dc2626;
+            --bg: #f8fafc;
+            --card-bg: #ffffff;
+            --border: #e2e8f0;
+            --text: #1e293b;
+            --text-muted: #64748b;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            padding: 20px;
+            max-width: 900px;
+            margin: 0 auto;
+        }
+
+        h1 {
+            font-size: 1.75rem;
+            font-weight: 600;
+            margin-bottom: 4px;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .card h2::before {
+            font-size: 1.25rem;
+        }
+
+        .upload-card h2::before { content: '📄'; }
+        .chat-card h2::before { content: '💬'; }
+
+        .row {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+            flex-wrap: wrap;
+        }
+
+        input[type="text"],
+        input[type="file"] {
+            flex: 1;
+            min-width: 200px;
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            font-size: 0.875rem;
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        input[type="text"]:focus {
+            outline: none;
+            border-color: var(--primary);
+            box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.1);
+        }
+
+        input[type="file"] {
+            padding: 8px;
+            cursor: pointer;
+        }
+
+        button {
+            padding: 10px 16px;
+            border: none;
+            border-radius: 8px;
+            font-size: 0.875rem;
+            font-weight: 500;
+            cursor: pointer;
+            transition: background 0.2s, transform 0.1s;
+            white-space: nowrap;
+        }
+
+        button:active {
+            transform: scale(0.98);
+        }
+
+        .btn-primary {
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background: var(--primary-hover);
+        }
+
+        .btn-secondary {
+            background: #f1f5f9;
+            color: var(--text);
+        }
+
+        .btn-secondary:hover {
+            background: #e2e8f0;
+        }
+
+        .btn-danger {
+            background: #fef2f2;
+            color: var(--danger);
+        }
+
+        .btn-danger:hover {
+            background: #fee2e2;
+        }
+
+        .checkbox-label {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            cursor: pointer;
+        }
+
+        .checkbox-label input {
+            width: 16px;
+            height: 16px;
+            cursor: pointer;
+        }
+
+        .status {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+            padding: 8px 12px;
+            background: #f8fafc;
+            border-radius: 6px;
+            white-space: pre-wrap;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            max-height: 120px;
+            overflow-y: auto;
+        }
+
+        .status:empty {
+            display: none;
+        }
+
+        .session-row {
+            margin-bottom: 12px;
+        }
+
+        .session-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        #session {
+            max-width: 200px;
+        }
+
+        #log {
+            background: #1e293b;
+            color: #e2e8f0;
+            border-radius: 8px;
+            padding: 16px;
+            margin-top: 12px;
+            min-height: 300px;
+            max-height: 500px;
+            overflow-y: auto;
+            font-family: 'SF Mono', Monaco, 'Courier New', monospace;
+            font-size: 0.875rem;
+            line-height: 1.5;
+            white-space: pre-wrap;
+            word-break: break-word;
+        }
+
+        .user-msg {
+            color: #60a5fa;
+        }
+
+        .assistant-msg {
+            color: #e2e8f0;
+        }
+
+        .system-msg {
+            color: #94a3b8;
+            font-style: italic;
+        }
+
+        .help-text {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-top: 8px;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 2px 8px;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 500;
+        }
+
+        .badge-success {
+            background: #dcfce7;
+            color: var(--success);
+        }
+
+        .badge-info {
+            background: #dbeafe;
+            color: var(--primary);
+        }
+
+        @media (max-width: 600px) {
+            body {
+                padding: 12px;
+            }
+            
+            .row {
+                flex-direction: column;
+                align-items: stretch;
+            }
+            
+            input[type="text"],
+            input[type="file"],
+            button {
+                width: 100%;
+            }
+            
+            #session {
+                max-width: none;
+            }
+        }
+    </style>
 </head>
 <body>
-  <h2>Local RAG Chat</h2>
-  <div class="small">Streaming UI using SSE. Upload docs per session, then chat.</div>
+    <h1>Local RAG Chat</h1>
+    <p class="subtitle">Upload documents and ask questions — powered by local LLM</p>
 
-  <div class="card">
-    <h3>Upload</h3>
-    <div class="row">
-      <input id="file" type="file" />
-      <button onclick="upload()">Upload</button>
-      <button onclick="clearIndex()">Clear Index (this session)</button>
-    </div>
-    <div class="small">Uses the current session_id from the box below.</div>
-    <pre id="uploadStatus" class="small"></pre>
-  </div>
-
-  <div class="card">
-    <h3>Chat</h3>
-    <div class="row">
-      <input id="session" type="text" value="test1" placeholder="session_id" />
-      <label class="small"><input id="stream" type="checkbox" checked /> stream</label>
+    <div class="card upload-card">
+        <h2>Upload Document</h2>
+        <div class="row">
+            <input id="file" type="file" accept=".docx,.ipynb,.txt,.md" />
+            <button class="btn-primary" onclick="upload()">Upload</button>
+            <button class="btn-danger" onclick="clearIndex()">Clear Index</button>
+        </div>
+        <p class="help-text">Supports: .docx, .ipynb, .txt, .md</p>
+        <div id="uploadStatus" class="status"></div>
     </div>
 
-    <div class="row" style="margin-top:8px;">
-      <input id="q" type="text" placeholder="Ask something..." />
-      <button onclick="ask()">Send</button>
-      <button onclick="clearLog()">Clear</button>
+    <div class="card chat-card">
+        <h2>Chat with Document</h2>
+        
+        <div class="session-row">
+            <div class="session-label">Session ID</div>
+            <div class="row">
+                <input id="session" type="text" value="session-1" placeholder="session-id" />
+                <label class="checkbox-label">
+                    <input id="stream" type="checkbox" checked />
+                    Stream responses
+                </label>
+            </div>
+        </div>
+
+        <div class="row">
+            <input id="q" type="text" placeholder="Ask a question about your document..." 
+                   onkeydown="if(event.key === 'Enter') ask()" />
+            <button class="btn-primary" onclick="ask()">Send</button>
+            <button class="btn-secondary" onclick="clearLog()">Clear Chat</button>
+        </div>
+
+        <div id="log"></div>
     </div>
 
-    <div id="log"></div>
-  </div>
+    <script>
+        let eventSource = null;
 
-<script>
-  let es = null;
+        function log(text, className = '') {
+            const el = document.getElementById('log');
+            if (className) {
+                el.innerHTML += `<span class="${className}">${escapeHtml(text)}</span>`;
+            } else {
+                el.textContent += text;
+            }
+            el.scrollTop = el.scrollHeight;
+        }
 
-  function log(text) {
-    const el = document.getElementById("log");
-    el.textContent += text;
-    el.scrollTop = el.scrollHeight;
-  }
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
 
-  function clearLog() {
-    document.getElementById("log").textContent = "";
-  }
+        function clearLog() {
+            document.getElementById('log').innerHTML = '';
+        }
 
-  async function upload() {
-    const f = document.getElementById("file").files[0];
-    const status = document.getElementById("uploadStatus");
-    const session = document.getElementById("session").value.trim() || "test1";
+        function setStatus(text) {
+            document.getElementById('uploadStatus').textContent = text;
+        }
 
-    if (!f) { status.textContent = "Pick a file first."; return; }
+        async function upload() {
+            const fileInput = document.getElementById('file');
+            const file = fileInput.files[0];
+            const session = document.getElementById('session').value.trim() || 'session-1';
 
-    status.textContent = "Uploading...";
-    const fd = new FormData();
-    fd.append("session_id", session);
-    fd.append("file", f);
+            if (!file) {
+                setStatus('⚠️ Please select a file first');
+                return;
+            }
 
-    const res = await fetch("/upload", { method: "POST", body: fd });
-    const j = await res.json();
-    status.textContent = JSON.stringify(j, null, 2);
-  }
+            setStatus('⏳ Uploading and indexing...');
 
-  async function clearIndex() {
-    const status = document.getElementById("uploadStatus");
-    const session = document.getElementById("session").value.trim() || "test1";
-    status.textContent = "Clearing session index...";
-    const res = await fetch(`/index/clear?session_id=${encodeURIComponent(session)}`, { method: "POST" });
-    const j = await res.json();
-    status.textContent = JSON.stringify(j, null, 2);
-    log(`\n[Index cleared for session: ${session}]\n`);
-  }
+            const formData = new FormData();
+            formData.append('session_id', session);
+            formData.append('file', file);
 
-  async function ask() {
-    const session = document.getElementById("session").value.trim() || "test1";
-    const query = document.getElementById("q").value.trim();
-    const stream = document.getElementById("stream").checked;
+            try {
+                const res = await fetch('/upload', { method: 'POST', body: formData });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    setStatus(`✅ Uploaded: ${data.file}\n📊 Chunks: ${data.chunks_added}\n📁 Active: ${data.active_file}`);
+                    log(`[System] Uploaded "${data.file}" (${data.chunks_added} chunks)\n`, 'system-msg');
+                } else {
+                    setStatus(`❌ Error: ${data.detail || 'Upload failed'}`);
+                }
+            } catch (err) {
+                setStatus(`❌ Error: ${err.message}`);
+            }
+        }
 
-    if (!query) return;
+        async function clearIndex() {
+            const session = document.getElementById('session').value.trim() || 'session-1';
+            
+            setStatus('⏳ Clearing index...');
 
-    log(`\n\n> ${query}\n`);
+            try {
+                const res = await fetch(`/index/clear?session_id=${encodeURIComponent(session)}`, {
+                    method: 'POST'
+                });
+                const data = await res.json();
+                
+                if (res.ok) {
+                    setStatus('✅ Index cleared');
+                    log(`[System] Index cleared for session: ${session}\n`, 'system-msg');
+                } else {
+                    setStatus(`❌ Error: ${data.detail || 'Clear failed'}`);
+                }
+            } catch (err) {
+                setStatus(`❌ Error: ${err.message}`);
+            }
+        }
 
-    if (es) { es.close(); es = null; }
+        async function ask() {
+            const session = document.getElementById('session').value.trim() || 'session-1';
+            const query = document.getElementById('q').value.trim();
+            const stream = document.getElementById('stream').checked;
 
-    if (!stream) {
-      const res = await fetch("/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ session_id: session, query })
-      });
-      const j = await res.json();
-      log(j.answer + "\n");
-      log("\nSources:\n" + JSON.stringify(j.sources, null, 2) + "\n");
-      if (j.active_file) log("\nActive file: " + j.active_file + "\n");
-      return;
-    }
+            if (!query) return;
 
-    const url = `/chat/stream?session_id=${encodeURIComponent(session)}&query=${encodeURIComponent(query)}`;
-    es = new EventSource(url);
+            // Clear input
+            document.getElementById('q').value = '';
 
-    es.onmessage = (evt) => {
-      if (evt.data === "[START]" || evt.data === "[END]") return;
-      log(evt.data.replaceAll("\\n", "\n"));
-    };
+            // Log user message
+            log(`\nYou: ${query}\n`, 'user-msg');
 
-    es.onerror = () => {
-      es.close();
-      es = null;
-      log("\n[stream closed]\n");
-    };
-  }
-</script>
+            // Close existing stream
+            if (eventSource) {
+                eventSource.close();
+                eventSource = null;
+            }
+
+            if (!stream) {
+                // Synchronous request
+                log('Assistant: ', 'assistant-msg');
+                
+                try {
+                    const res = await fetch('/chat', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ session_id: session, query })
+                    });
+                    
+                    const data = await res.json();
+                    
+                    if (res.ok) {
+                        log(data.answer + '\n');
+                        if (data.sources && data.sources.length > 0) {
+                            const srcList = data.sources.map(s => s.source).join(', ');
+                            log(`[Sources: ${srcList}]\n`, 'system-msg');
+                        }
+                    } else {
+                        log(`Error: ${data.detail || 'Request failed'}\n`, 'system-msg');
+                    }
+                } catch (err) {
+                    log(`Error: ${err.message}\n`, 'system-msg');
+                }
+                return;
+            }
+
+            // Streaming request
+            log('Assistant: ', 'assistant-msg');
+            
+            const url = `/chat/stream?session_id=${encodeURIComponent(session)}&query=${encodeURIComponent(query)}`;
+            eventSource = new EventSource(url);
+
+            eventSource.onmessage = (event) => {
+                const data = event.data;
+                
+                if (data === '[START]') return;
+                if (data === '[END]') {
+                    log('\n');
+                    eventSource.close();
+                    eventSource = null;
+                    return;
+                }
+                if (data.startsWith('[ERROR]')) {
+                    log(`\n${data}\n`, 'system-msg');
+                    return;
+                }
+                
+                // Unescape newlines
+                log(data.replace(/\\n/g, '\n'));
+            };
+
+            eventSource.onerror = () => {
+                eventSource.close();
+                eventSource = null;
+                log('\n[Stream ended]\n', 'system-msg');
+            };
+        }
+
+        // Initialize
+        document.getElementById('log').innerHTML = '<span class="system-msg">[Ready] Upload a document to get started</span>\n';
+    </script>
 </body>
 </html>

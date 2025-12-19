@@ -1,19 +1,85 @@
+# ═══════════════════════════════════════════════════════════════════════════════
 # Python
+# ═══════════════════════════════════════════════════════════════════════════════
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Virtual Environments
+# ═══════════════════════════════════════════════════════════════════════════════
 .venv/
+venv/
+ENV/
+env/
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# IDE / Editor
+# ═══════════════════════════════════════════════════════════════════════════════
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# OS
+# ═══════════════════════════════════════════════════════════════════════════════
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# ═══════════════════════════════════════════════════════════════════════════════
+# Project Specific
+# ═══════════════════════════════════════════════════════════════════════════════
+
+# Data directories (runtime generated)
+data/
+!data/.gitkeep
+
+# FAISS indexes
+*.index
+index/
 
 # HuggingFace cache
 hf_cache/
 .cache/
+~/.cache/huggingface/
 
-# FAISS index (generated)
-index/
-*.index
-meta.json
+# Environment files
+.env
+.env.local
+.env.*.local
 
-# OS
-.DS_Store
-Thumbs.db
+# Logs
+*.log
+logs/
+
+# Test artifacts
+.pytest_cache/
+.coverage
+htmlcov/
+
+# Jupyter
+.ipynb_checkpoints/
