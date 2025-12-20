@@ -52,9 +52,9 @@ class Settings(BaseSettings):
     # ═══════════════════════════════════════════════════════════════════════════
     ollama_enabled: bool = Field(default=True, description="Enable Ollama for LLM inference")
     ollama_base_url: str = Field(
-        default="http://localhost:11434",
+        default="http://localhost:11435",  
         description="Ollama API base URL",
-    )
+   )
     ollama_model: str = Field(default="mistral", description="Ollama model name")
 
     # ═══════════════════════════════════════════════════════════════════════════
