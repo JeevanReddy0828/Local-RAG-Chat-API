@@ -41,7 +41,7 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 | **🧠 Conversation Memory** | Multi-turn context retention per session |
 | **📊 Evaluation Framework** | Built-in Recall@K and answer similarity metrics |
 | **🐳 Docker + GPU Ready** | Production deployment with NVIDIA CUDA support |
-| **🌐 Web UI ** | Clean, basic functional chat interface |
+| **🌐 React Web UI ** | Clean, basic functional chat interface using React |
 
 ---
 
