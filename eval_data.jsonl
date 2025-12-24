@@ -1,3 +1,10 @@
-{"question": "Summarize the document", "expected_answer": "A comprehensive overview of the document's main content", "expected_source": ""}
-{"question": "What are the main topics covered?", "expected_answer": "The key themes and subjects discussed in the document", "expected_source": ""}
-{"question": "What is this document about?", "expected_answer": "An overview describing the document's purpose and content", "expected_source": ""}
+{"question": "Summarize this document", "expected_answer": "A comprehensive overview of the document content", "task_type": "summary", "difficulty": "medium"}
+{"question": "What is this document about?", "expected_answer": "Description of the document's main topic and purpose", "task_type": "summary", "difficulty": "easy"}
+{"question": "Give me an overview of the document", "expected_answer": "High-level summary covering key points", "task_type": "summary", "difficulty": "easy"}
+{"question": "What are the main topics covered?", "expected_answer": "List of primary themes and subjects", "task_type": "extraction", "difficulty": "medium"}
+{"question": "What skills are mentioned?", "expected_answer": "Technical and professional skills listed", "task_type": "extraction", "difficulty": "easy"}
+{"question": "What programming languages are listed?", "expected_answer": "Python, JavaScript, SQL, and other languages", "task_type": "factual", "difficulty": "easy"}
+{"question": "What is the person's work experience?", "expected_answer": "Professional history and job roles", "task_type": "extraction", "difficulty": "medium"}
+{"question": "What education background is mentioned?", "expected_answer": "Degrees, universities, and academic achievements", "task_type": "factual", "difficulty": "easy"}
+{"question": "What projects are described?", "expected_answer": "List of technical projects with descriptions", "task_type": "extraction", "difficulty": "medium"}
+{"question": "What certifications does the person have?", "expected_answer": "Professional certifications and credentials", "task_type": "factual", "difficulty": "easy"}

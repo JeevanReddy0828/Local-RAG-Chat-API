@@ -41,17 +41,17 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 | **🧠 Conversation Memory** | Multi-turn context retention per session |
 | **📊 Evaluation Framework** | Built-in Recall@K and answer similarity metrics |
 | **🐳 Docker + GPU Ready** | Production deployment with NVIDIA CUDA support |
-| **🌐 React Web UI ** | Clean, basic functional chat interface using React |
+| **🌐 Web UI Included** | Clean, functional chat interface out of the box |
 
 ---
 
 ## 🏗 Architecture
 
 ```
-┌────────────────────────────────────────────────────────────────────────────┐
-│                              CLIENT LAYER                                  │
-├────────────────────────────────────────────────────────────────────────────┤
-│                                                                            │
+┌─────────────────────────────────────────────────────────────────────────────┐
+│                              CLIENT LAYER                                   │
+├─────────────────────────────────────────────────────────────────────────────┤
+│                                                                             │
 │    ┌──────────────┐         ┌──────────────┐         ┌──────────────┐      │
 │    │   Web UI     │         │  REST Client │         │   cURL/SDK   │      │
 │    │  (index.html)│         │  (Postman)   │         │              │      │
@@ -64,10 +64,10 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 │                              API LAYER (FastAPI)                            │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│    ┌────────────────┐    ┌────────────────┐    ┌────────────────┐           │
+│    ┌────────────────┐    ┌────────────────┐    ┌────────────────┐          │
 │    │  POST /upload  │    │  POST /chat    │    │ GET /chat/stream│          │
-│    │                │    │                │    │     (SSE)      │           │
-│    └───────┬────────┘    └───────┬────────┘    └───────┬────────┘           │
+│    │                │    │                │    │     (SSE)      │          │
+│    └───────┬────────┘    └───────┬────────┘    └───────┬────────┘          │
 │            │                     │                     │                    │
 └────────────┼─────────────────────┼─────────────────────┼────────────────────┘
              │                     │                     │
@@ -76,37 +76,37 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 │                              RAG ENGINE                                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        DOCUMENT PROCESSING                          │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │    │
-│  │  │  chunking.py │  │   ingest.py  │  │  E5 Embedder │               │    │
-│  │  │  .docx/.ipynb│  │  .txt/.md    │  │  (384-dim)   │               │    │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘               │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        DOCUMENT PROCESSING                          │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │   │
+│  │  │  chunking.py │  │   ingest.py  │  │  E5 Embedder │              │   │
+│  │  │  .docx/.ipynb│  │  .txt/.md    │  │  (384-dim)   │              │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘              │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
 │                                    │                                        │
 │                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                         RETRIEVAL LAYER                             │    │
-│  │  ┌──────────────────────────────────────────────────────────────┐   │    │
-│  │  │                    Intent Detection                          │   │    │
-│  │  │  "summarize" / "overview" → Full Document Retrieval          │   │    │
-│  │  │  Fact-based queries       → Semantic Top-K (FAISS)           │   │    │
-│  │  └──────────────────────────────────────────────────────────────┘   │    │
-│  │                              │                                      │    │
-│  │  ┌──────────────┐  ┌────────┴───────┐  ┌──────────────┐             │    │
-│  │  │ FAISS Index  │  │ Active File    │  │ Session      │             │    │
-│  │  │ (IndexFlatIP)│  │ Filter         │  │ Isolation    │             │    │
-│  │  └──────────────┘  └────────────────┘  └──────────────┘             │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                         RETRIEVAL LAYER                             │   │
+│  │  ┌──────────────────────────────────────────────────────────────┐  │   │
+│  │  │                    Intent Detection                          │  │   │
+│  │  │  "summarize" / "overview" → Full Document Retrieval          │  │   │
+│  │  │  Fact-based queries       → Semantic Top-K (FAISS)           │  │   │
+│  │  └──────────────────────────────────────────────────────────────┘  │   │
+│  │                              │                                      │   │
+│  │  ┌──────────────┐  ┌────────┴───────┐  ┌──────────────┐           │   │
+│  │  │ FAISS Index  │  │ Active File    │  │ Session      │           │   │
+│  │  │ (IndexFlatIP)│  │ Filter         │  │ Isolation    │           │   │
+│  │  └──────────────┘  └────────────────┘  └──────────────┘           │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
 │                                    │                                        │
 │                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐    │
-│  │                        GENERATION LAYER                             │    │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │    │
-│  │  │  memory.py   │  │ Prompt Build │  │ Ollama Client│               │    │
-│  │  │  (History)   │  │ (Context+Q)  │  │ (Mistral-7B) │               │    │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘               │    │
-│  └─────────────────────────────────────────────────────────────────────┘    │
+│  ┌─────────────────────────────────────────────────────────────────────┐   │
+│  │                        GENERATION LAYER                             │   │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │   │
+│  │  │  memory.py   │  │ Prompt Build │  │ Ollama Client│              │   │
+│  │  │  (History)   │  │ (Context+Q)  │  │ (Mistral-7B) │              │   │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘              │   │
+│  └─────────────────────────────────────────────────────────────────────┘   │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
                                      │
@@ -160,8 +160,17 @@ hf-rag-api/
 │   ├── ollama_client.py          # Ollama API client (sync + streaming)
 │   └── eval.py                   # Evaluation framework
 │
-├── ui/                           # Frontend
-│   └── index.html                # Streaming chat interface
+├── ui/                           # Simple HTML frontend
+│   └── index.html                # Vanilla JS chat interface
+│
+├── ui-react/                     # React frontend (recommended)
+│   ├── src/
+│   │   ├── App.jsx               # Main React component
+│   │   └── main.jsx              # Entry point
+│   ├── index.html
+│   ├── package.json
+│   ├── vite.config.js
+│   └── README.md
 │
 ├── data/                         # Runtime data (gitignored)
 │   ├── raw/                      # Uploaded documents
@@ -182,7 +191,7 @@ hf-rag-api/
 
 ### Prerequisites
 
-- Python 3.10+
+- **Python 3.9 - 3.12** (Python 3.13+ not yet supported by PyTorch)
 - [Ollama](https://ollama.ai/) with Mistral model
 - **For GPU acceleration:**
   - NVIDIA GPU with CUDA support
@@ -195,18 +204,32 @@ hf-rag-api/
 ```bash
 git clone https://github.com/yourusername/hf-rag-api.git
 cd hf-rag-api
-
-python -m venv .venv
-source .venv/bin/activate    # Linux/macOS
-# .venv\Scripts\activate     # Windows
 ```
+
+**Linux/macOS:**
+```bash
+python3.11 -m venv .venv
+source .venv/bin/activate
+```
+
+**Windows (PowerShell):**
+```powershell
+# Check available Python versions
+py --list
+
+# Create venv with Python 3.11 (or 3.12)
+py -3.11 -m venv .venv311
+.venv311\Scripts\activate
+```
+
+> ⚠️ **Important:** PyTorch requires Python 3.9-3.12. If you have Python 3.13+, you must specify an older version when creating the virtual environment.
 
 ### 2️⃣ Install Dependencies
 
 **For GPU (CUDA 12.1) - Recommended:**
 ```bash
 # Install PyTorch with CUDA support first
-pip install torch --index-url https://download.pytorch.org/whl/cu121
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 # Install remaining dependencies
 pip install -r requirements.txt
@@ -217,12 +240,13 @@ python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}, Device: {tor
 
 **For CPU only:**
 ```bash
-pip install torch --index-url https://download.pytorch.org/whl/cpu
+pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
 pip install -r requirements.txt
 ```
 
 ### 3️⃣ Start Ollama with Mistral
 
+**Linux/macOS:**
 ```bash
 # Install Ollama (if not installed)
 curl -fsSL https://ollama.ai/install.sh | sh
@@ -232,22 +256,52 @@ ollama pull mistral
 ollama serve  # Runs on port 11434 by default
 ```
 
-### 3️⃣ Configure (Optional)
+**Windows:**
+```powershell
+# Download and install from https://ollama.ai/download/windows
+# Then:
+ollama pull mistral
+ollama serve
+```
+
+> 📝 **Note:** Ollama may run on port `11434` or `11435`. Check your Ollama output and update `.env` if needed:
+> ```
+> OLLAMA_BASE_URL=http://localhost:11435
+> ```
+
+### 4️⃣ Configure (Optional)
 
 ```bash
 cp .env.example .env
 # Edit .env to customize ports, models, etc.
 ```
 
-### 4️⃣ Run the Server
+### 5️⃣ Run the Server
 
 ```bash
 uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
 ```
 
-### 5️⃣ Open the UI
+### 6️⃣ Open the UI
 
-Navigate to **http://localhost:8000** → auto-redirects to the chat UI.
+**Option A: Simple HTML UI**
+
+Navigate to **http://localhost:8000** → auto-redirects to the basic chat UI.
+
+**Option B: React UI (Recommended)**
+
+```bash
+cd ui-react
+npm install
+npm run dev
+```
+
+Opens at **http://localhost:3000** with:
+- 🌙 Dark theme minimal design
+- 📱 Fully responsive
+- ⚡ Real-time streaming
+- 📊 Index statistics
+- 💾 Session management
 
 ---
 
@@ -370,38 +424,85 @@ DOC_LEVEL_TRIGGERS = [
 
 ## 📊 Evaluation Framework
 
-Built-in evaluation with Recall@K and answer similarity metrics.
+Comprehensive evaluation with **intrinsic** (retrieval quality) and **extrinsic** (answer quality) metrics.
+
+### Metrics Overview
+
+| Category | Metric | Description |
+|----------|--------|-------------|
+| **Intrinsic** | Precision@K | Fraction of retrieved docs that are relevant |
+| | Recall@K | Fraction of relevant docs that are retrieved |
+| | MRR | Mean Reciprocal Rank - position of first relevant result |
+| | NDCG | Normalized Discounted Cumulative Gain - ranking quality |
+| | Similarity Stats | Embedding similarity distribution |
+| **Extrinsic** | Answer Relevance | How well answer addresses the question (0-100) |
+| | Faithfulness | Is answer grounded in retrieved context (0-100) |
+| | Answer Similarity | Fuzzy match with expected answer (0-100) |
+| | Task Success Rate | Binary success/fail for specific task types |
+| | Hallucination Score | Facts not in source documents (lower is better) |
 
 ### Prepare Test Data
 
 Create `eval_data.jsonl`:
 ```jsonl
-{"question": "What programming languages are mentioned?", "expected_answer": "Python, JavaScript, and SQL", "expected_source": "resume.docx"}
-{"question": "Summarize the document", "expected_answer": "A professional resume highlighting software engineering experience", "expected_source": "resume.docx"}
+{"question": "What programming languages are mentioned?", "expected_answer": "Python, JavaScript, SQL", "task_type": "factual", "difficulty": "easy"}
+{"question": "Summarize the document", "expected_answer": "A professional resume for a software engineer", "task_type": "summary", "difficulty": "medium"}
+{"question": "What certifications does the person have?", "expected_answer": "AWS Machine Learning Associate", "task_type": "extraction", "difficulty": "easy"}
 ```
 
 ### Run Evaluation
 
 ```bash
-python -m app.eval
+# Basic evaluation
+python -m app.evaluation --eval-file eval_data.jsonl
+
+# Save results to JSON
+python -m app.evaluation --eval-file eval_data.jsonl --output results.json
 ```
 
-### Output
+### Sample Output
 
 ```
----
-Q: What programming languages are mentioned?
-Expected source: resume.docx
-Retrieved sources: ['resume.docx']
-Recall hit: True
-Similarity: 78
-Answer: The document mentions Python, JavaScript, SQL...
+================================================================================
+RAG SYSTEM EVALUATION REPORT
+================================================================================
+Timestamp: 2024-12-20T15:30:00
+Samples Evaluated: 10
 
-==========================
-Total samples: 2
-Recall@K: 1.0
-Avg answer similarity: 82.5
-==========================
+----------------------------------------
+INTRINSIC METRICS (Retrieval Quality)
+----------------------------------------
+  Precision@K:      0.8500
+  Recall@K:         0.9000
+  MRR:              0.9200
+  NDCG:             0.8800
+  Avg Similarity:   0.7650
+
+----------------------------------------
+EXTRINSIC METRICS (Answer Quality)
+----------------------------------------
+  Answer Relevance: 82.50/100
+  Faithfulness:     78.30/100
+  Answer Similarity:71.20/100
+  Task Success Rate:80.00%
+  Hallucination:    21.70/100 (lower is better)
+  Avg Latency:      1250ms
+
+----------------------------------------
+METRICS BY TASK TYPE
+----------------------------------------
+  [SUMMARY] (n=3)
+    Precision:    0.9000
+    Success Rate: 100.00%
+
+  [FACTUAL] (n=4)
+    Precision:    0.8500
+    Success Rate: 75.00%
+
+  [EXTRACTION] (n=3)
+    Precision:    0.8000
+    Success Rate: 66.67%
+================================================================================
 ```
 
 ---
