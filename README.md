@@ -87,8 +87,8 @@ The backend is built with FastAPI, providing REST endpoints for uploading, chatt
 | **⚡ Real-Time Streaming** | Server-Sent Events (SSE) for token-by-token output |
 | **🧠 Conversation Memory** | Multi-turn context retention per session |
 | **📊 Evaluation Framework** | Built-in Precision, Recall, MRR, NDCG, and answer similarity metrics |
-| **🌐 React UI ** | Modern, responsive chat interface with dark theme |
-| **🐳 Docker + GPU ** | Production deployment with NVIDIA CUDA support |
+| **🌐 React UI** | Modern, responsive chat interface with dark theme |
+| **🐳 Docker + GPU** | Production deployment with NVIDIA CUDA support |
 
 ---
 
