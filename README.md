@@ -1,14 +1,59 @@
 # 🔍 Local RAG Chat API
 
 [![Python 3.10+](https://img.shields.io/badge/Python-3.10+-3776AB.svg?logo=python&logoColor=white)](https://www.python.org/downloads/)
-[![PyTorch 2.4](https://img.shields.io/badge/PyTorch-2.4-EE4C2C.svg?logo=pytorch&logoColor=white)](https://pytorch.org/)
-[![CUDA 12.1](https://img.shields.io/badge/CUDA-12.1-76B900.svg?logo=nvidia&logoColor=white)](https://developer.nvidia.com/cuda-toolkit)
 [![FastAPI](https://img.shields.io/badge/FastAPI-0.100+-009688.svg?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![React](https://img.shields.io/badge/React-18-61DAFB.svg?logo=react&logoColor=white)](https://reactjs.org/)
 [![FAISS](https://img.shields.io/badge/FAISS-Vector_Search-blue.svg)](https://github.com/facebookresearch/faiss)
+[![Ollama](https://img.shields.io/badge/Ollama-Local_LLM-black.svg)](https://ollama.ai/)
 [![Docker](https://img.shields.io/badge/Docker-Ready-2496ED.svg?logo=docker&logoColor=white)](https://www.docker.com/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-A **production-grade, local Retrieval-Augmented Generation (RAG) system** built with **Mistral-7B, FAISS, and FastAPI**. Features session-aware document management, intent-aware retrieval strategies, real-time streaming responses, and a built-in evaluation framework — all running locally without external API dependencies.
+A **production-grade, local Retrieval-Augmented Generation (RAG) system** built with **LLaMA/Mistral, FAISS, and FastAPI**. Features session-aware document management, intent-aware retrieval strategies, real-time streaming responses, and a built-in evaluation framework — all running locally without external API dependencies.
+
+---
+
+## 🎯 What is This?
+
+This is a document question-answering system that lets you upload documents and ask questions about them. The AI answers based only on your document content, not from its general knowledge, which prevents hallucinations and ensures accurate responses.
+
+When you upload a document like a resume or report, the system first extracts the text and splits it into smaller pieces called chunks. This is necessary because AI models have limited context windows and can't process very large documents at once. Each chunk is then converted into a numerical representation called an embedding using a Sentence Transformer model. These embeddings capture the semantic meaning of the text, so similar content will have similar numbers.
+
+The embeddings are stored in a FAISS index, which is Facebook's library for fast similarity search. When you ask a question, your question is also converted into an embedding, and FAISS quickly finds the chunks most relevant to your query by comparing vector similarities. The system then sends these relevant chunks along with your question to a local LLM running through Ollama (LLaMA or Mistral). The model reads the context and generates an answer based specifically on your document.
+
+The backend is built with FastAPI, providing REST endpoints for uploading, chatting, and streaming responses. The React frontend offers a clean interface with real-time streaming, showing tokens as they're generated. Everything runs locally on your machine, ensuring privacy since no data is sent to external servers.
+
+---
+
+## 🔄 How It Works
+
+```
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Upload     │────▶│   Chunking   │────▶│  Embedding   │
+│   Document   │     │  Split text  │     │  E5-small-v2 │
+└──────────────┘     └──────────────┘     └──────┬───────┘
+                                                  │
+                                                  ▼
+┌──────────────┐     ┌──────────────┐     ┌──────────────┐
+│   Answer     │◀────│   LLaMA/     │◀────│    FAISS     │
+│   Display    │     │   Mistral    │     │   Search     │
+└──────────────┘     └──────────────┘     └──────────────┘
+                            ▲                     ▲
+                            │                     │
+                     ┌──────┴─────────────────────┴──────┐
+                     │         User Question             │
+                     └───────────────────────────────────┘
+```
+
+**Step-by-Step Flow:**
+
+1. **Upload** → You upload a .docx, .txt, or .md file
+2. **Chunking** → Text is split into smaller pieces (~1000 chars each)
+3. **Embedding** → Each chunk becomes a 384-dimensional vector
+4. **Indexing** → Vectors stored in FAISS for fast search
+5. **Question** → Your question is also converted to a vector
+6. **Retrieval** → FAISS finds the most similar chunks
+7. **Generation** → Relevant chunks + question go to the LLM
+8. **Streaming** → Answer streams back in real-time
 
 ---
 
@@ -24,6 +69,7 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 - [Evaluation Framework](#-evaluation-framework)
 - [Docker Deployment](#-docker-deployment)
 - [Configuration](#-configuration)
+- [Troubleshooting](#-troubleshooting)
 - [Known Limitations](#-known-limitations)
 - [Future Roadmap](#-future-roadmap)
 - [License](#-license)
@@ -34,14 +80,15 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 
 | Feature | Description |
 |---------|-------------|
-| **🤖 Local LLM Inference** | Mistral-7B via Ollama — no external APIs, full data privacy |
+| **🔒 100% Local** | Runs entirely on your machine — no data sent to external servers |
+| **🤖 Local LLM Inference** | LLaMA/Mistral via Ollama — no external APIs, full data privacy |
 | **📁 Session-Aware Uploads** | Per-session document isolation with active-file tracking |
 | **🎯 Intent-Aware Retrieval** | Adaptive strategy: full-document for summaries, semantic top-k for facts |
 | **⚡ Real-Time Streaming** | Server-Sent Events (SSE) for token-by-token output |
 | **🧠 Conversation Memory** | Multi-turn context retention per session |
-| **📊 Evaluation Framework** | Built-in Recall@K and answer similarity metrics |
+| **📊 Evaluation Framework** | Built-in Precision, Recall, MRR, NDCG, and answer similarity metrics |
+| **🌐 React UI Included** | Modern, responsive chat interface with dark theme |
 | **🐳 Docker + GPU Ready** | Production deployment with NVIDIA CUDA support |
-| **🌐 Web UI Included** | Clean, functional chat interface out of the box |
 
 ---
 
@@ -53,8 +100,8 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
 │    ┌──────────────┐         ┌──────────────┐         ┌──────────────┐      │
-│    │   Web UI     │         │  REST Client │         │   cURL/SDK   │      │
-│    │  (index.html)│         │  (Postman)   │         │              │      │
+│    │  React UI    │         │  REST Client │         │   cURL/SDK   │      │
+│    │  (port 3000) │         │  (Postman)   │         │              │      │
 │    └──────┬───────┘         └──────┬───────┘         └──────┬───────┘      │
 │           │                        │                        │              │
 └───────────┼────────────────────────┼────────────────────────┼──────────────┘
@@ -76,37 +123,37 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 │                              RAG ENGINE                                     │
 ├─────────────────────────────────────────────────────────────────────────────┤
 │                                                                             │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                        DOCUMENT PROCESSING                          │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │   │
-│  │  │  chunking.py │  │   ingest.py  │  │  E5 Embedder │              │   │
-│  │  │  .docx/.ipynb│  │  .txt/.md    │  │  (384-dim)   │              │   │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘              │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        DOCUMENT PROCESSING                          │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │    │
+│  │  │  chunking.py │  │   ingest.py  │  │  E5 Embedder │               │    │
+│  │  │  .docx/.ipynb│  │  .txt/.md    │  │  (384-dim)   │               │    │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘               │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
 │                                    │                                        │
 │                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                         RETRIEVAL LAYER                             │   │
-│  │  ┌──────────────────────────────────────────────────────────────┐  │   │
-│  │  │                    Intent Detection                          │  │   │
-│  │  │  "summarize" / "overview" → Full Document Retrieval          │  │   │
-│  │  │  Fact-based queries       → Semantic Top-K (FAISS)           │  │   │
-│  │  └──────────────────────────────────────────────────────────────┘  │   │
-│  │                              │                                      │   │
-│  │  ┌──────────────┐  ┌────────┴───────┐  ┌──────────────┐           │   │
-│  │  │ FAISS Index  │  │ Active File    │  │ Session      │           │   │
-│  │  │ (IndexFlatIP)│  │ Filter         │  │ Isolation    │           │   │
-│  │  └──────────────┘  └────────────────┘  └──────────────┘           │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                         RETRIEVAL LAYER                             │    │
+│  │  ┌──────────────────────────────────────────────────────────────┐   │    │
+│  │  │                    Intent Detection                          │   │    │
+│  │  │  "summarize" / "overview" → Full Document Retrieval          │   │    │
+│  │  │  Fact-based queries       → Semantic Top-K (FAISS)           │   │    │
+│  │  └──────────────────────────────────────────────────────────────┘   │    │
+│  │                              │                                      │    │
+│  │  ┌──────────────┐  ┌────────┴───────┐  ┌──────────────┐             │    │
+│  │  │ FAISS Index  │  │ Active File    │  │ Session      │             │    │
+│  │  │ (IndexFlatIP)│  │ Filter         │  │ Isolation    │             │    │
+│  │  └──────────────┘  └────────────────┘  └──────────────┘             │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
 │                                    │                                        │
 │                                    ▼                                        │
-│  ┌─────────────────────────────────────────────────────────────────────┐   │
-│  │                        GENERATION LAYER                             │   │
-│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │   │
-│  │  │  memory.py   │  │ Prompt Build │  │ Ollama Client│              │   │
-│  │  │  (History)   │  │ (Context+Q)  │  │ (Mistral-7B) │              │   │
-│  │  └──────────────┘  └──────────────┘  └──────────────┘              │   │
-│  └─────────────────────────────────────────────────────────────────────┘   │
+│  ┌─────────────────────────────────────────────────────────────────────┐    │
+│  │                        GENERATION LAYER                             │    │
+│  │  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │    │
+│  │  │  memory.py   │  │ Prompt Build │  │ Ollama Client│               │    │
+│  │  │  (History)   │  │ (Context+Q)  │  │(Mistral)     │               │    │
+│  │  └──────────────┘  └──────────────┘  └──────────────┘               │    │
+│  └─────────────────────────────────────────────────────────────────────┘    │
 │                                                                             │
 └─────────────────────────────────────────────────────────────────────────────┘
                                      │
@@ -132,14 +179,14 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 
 | Layer | Technology | Purpose |
 |-------|------------|---------|
-| **LLM** | Mistral-7B (via Ollama) | Local text generation |
-| **Deep Learning** | PyTorch 2.4 + CUDA 12.1 | GPU-accelerated inference |
+| **LLM** | LLaMA 3.2 / Mistral (via Ollama) | Local text generation |
 | **Embeddings** | `intfloat/e5-small-v2` | 384-dim semantic vectors |
 | **Vector Store** | FAISS (IndexFlatIP) | Similarity search |
 | **Backend** | FastAPI + Uvicorn | Async API server |
+| **Frontend** | React + Vite | Modern chat UI |
 | **Streaming** | Server-Sent Events | Real-time token output |
 | **Document Parsing** | python-docx, json | DOCX/IPYNB support |
-| **Evaluation** | RapidFuzz | Answer similarity scoring |
+| **Evaluation** | Sentence Transformers, RapidFuzz | Metrics scoring |
 | **Containerization** | Docker + NVIDIA Container Toolkit | GPU-accelerated deployment |
 
 ---
@@ -147,7 +194,7 @@ A **production-grade, local Retrieval-Augmented Generation (RAG) system** built 
 ## 📂 Project Structure
 
 ```
-hf-rag-api/
+Local-RAG-Chat-API/
 │
 ├── app/                          # Core application
 │   ├── __init__.py               # Package init
@@ -158,7 +205,7 @@ hf-rag-api/
 │   ├── memory.py                 # Session memory & active-file tracking
 │   ├── config.py                 # Pydantic settings
 │   ├── ollama_client.py          # Ollama API client (sync + streaming)
-│   └── eval.py                   # Evaluation framework
+│   └── evaluation.py             # Evaluation framework
 │
 ├── ui/                           # Simple HTML frontend
 │   └── index.html                # Vanilla JS chat interface
@@ -191,19 +238,29 @@ hf-rag-api/
 
 ### Prerequisites
 
-- **Python 3.9 - 3.12** (Python 3.13+ not yet supported by PyTorch)
-- [Ollama](https://ollama.ai/) with Mistral model
-- **For GPU acceleration:**
-  - NVIDIA GPU with CUDA support
-  - CUDA 12.1+ and cuDNN 9+
-  - PyTorch 2.4+ with CUDA support
-  - [NVIDIA Container Toolkit](https://docs.nvidia.com/datacenter/cloud-native/container-toolkit/install-guide.html) (for Docker)
+- **Python 3.10 - 3.12** (Python 3.13+ not yet supported by PyTorch)
+- **Node.js 18+** (for React UI)
+- [Ollama](https://ollama.ai/) installed and running
 
-### 1️⃣ Clone & Setup Environment
+### 1️⃣ Install Ollama & Model
 
 ```bash
-git clone https://github.com/yourusername/hf-rag-api.git
-cd hf-rag-api
+# Install Ollama from https://ollama.ai/
+
+# Pull a model
+ollama pull llama3.2
+# or
+ollama pull mistral
+
+# Start Ollama server
+ollama serve
+```
+
+### 2️⃣ Clone & Setup Environment
+
+```bash
+git clone https://github.com/JeevanReddy0828/Local-RAG-Chat-API.git
+cd Local-RAG-Chat-API
 ```
 
 **Linux/macOS:**
@@ -214,81 +271,40 @@ source .venv/bin/activate
 
 **Windows (PowerShell):**
 ```powershell
-# Check available Python versions
-py --list
-
-# Create venv with Python 3.11 (or 3.12)
 py -3.11 -m venv .venv311
 .venv311\Scripts\activate
 ```
 
-> ⚠️ **Important:** PyTorch requires Python 3.9-3.12. If you have Python 3.13+, you must specify an older version when creating the virtual environment.
+### 3️⃣ Install Dependencies
 
-### 2️⃣ Install Dependencies
-
-**For GPU (CUDA 12.1) - Recommended:**
 ```bash
-# Install PyTorch with CUDA support first
+# Install PyTorch (GPU)
 pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
 
 # Install remaining dependencies
 pip install -r requirements.txt
-
-# Verify CUDA is available
-python -c "import torch; print(f'CUDA: {torch.cuda.is_available()}, Device: {torch.cuda.get_device_name(0) if torch.cuda.is_available() else \"CPU\"}')"
 ```
 
-**For CPU only:**
-```bash
-pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cpu
-pip install -r requirements.txt
+### 4️⃣ Configure Environment
+
+Create a `.env` file:
+
+```env
+OLLAMA_BASE_URL=http://localhost:11434
+OLLAMA_MODEL=llama3.2
 ```
 
-### 3️⃣ Start Ollama with Mistral
+> **Note:** If Ollama runs on a different port (e.g., 11435), update the URL accordingly.
 
-**Linux/macOS:**
-```bash
-# Install Ollama (if not installed)
-curl -fsSL https://ollama.ai/install.sh | sh
-
-# Pull and run Mistral
-ollama pull mistral
-ollama serve  # Runs on port 11434 by default
-```
-
-**Windows:**
-```powershell
-# Download and install from https://ollama.ai/download/windows
-# Then:
-ollama pull mistral
-ollama serve
-```
-
-> 📝 **Note:** Ollama may run on port `11434` or `11435`. Check your Ollama output and update `.env` if needed:
-> ```
-> OLLAMA_BASE_URL=http://localhost:11435
-> ```
-
-### 4️⃣ Configure (Optional)
+### 5️⃣ Start Backend
 
 ```bash
-cp .env.example .env
-# Edit .env to customize ports, models, etc.
+uvicorn app.main:app --reload
 ```
 
-### 5️⃣ Run the Server
+Backend runs at: **http://127.0.0.1:8000**
 
-```bash
-uvicorn app.main:app --reload --host 0.0.0.0 --port 8000
-```
-
-### 6️⃣ Open the UI
-
-**Option A: Simple HTML UI**
-
-Navigate to **http://localhost:8000** → auto-redirects to the basic chat UI.
-
-**Option B: React UI (Recommended)**
+### 6️⃣ Start React Frontend
 
 ```bash
 cd ui-react
@@ -296,12 +312,13 @@ npm install
 npm run dev
 ```
 
-Opens at **http://localhost:3000** with:
-- 🌙 Dark theme minimal design
-- 📱 Fully responsive
-- ⚡ Real-time streaming
-- 📊 Index statistics
-- 💾 Session management
+Frontend runs at: **http://localhost:3000**
+
+### 7️⃣ Use It!
+
+1. Open http://localhost:3000
+2. Upload a document (.docx, .txt, .md)
+3. Ask questions like "summarize" or "what skills are mentioned?"
 
 ---
 
@@ -319,289 +336,90 @@ Content-Type: multipart/form-data
 | `session_id` | string | Unique session identifier |
 | `file` | file | Document (.docx, .ipynb, .txt, .md) |
 
-**Response:**
-```json
-{
-  "session_id": "user123",
-  "file": "resume.docx",
-  "type": "docx",
-  "chunks_added": 8,
-  "active_file": "resume.docx"
-}
-```
-
 ### Chat (Synchronous)
 
 ```http
 POST /chat
 Content-Type: application/json
-```
 
-**Request:**
-```json
 {
   "session_id": "user123",
-  "query": "What skills are mentioned in the document?"
-}
-```
-
-**Response:**
-```json
-{
-  "answer": "The document mentions Python, FastAPI, and machine learning skills...",
-  "sources": [
-    {"source": "resume.docx", "best_score": 0.847}
-  ],
-  "active_file": "resume.docx"
+  "query": "What skills are mentioned?"
 }
 ```
 
 ### Chat (Streaming)
 
 ```http
-GET /chat/stream?session_id=user123&query=Summarize%20the%20document
+GET /chat/stream?session_id=user123&query=summarize
 Accept: text/event-stream
 ```
 
-**Response (SSE):**
-```
-data: [START]
-data: The document is a professional resume...
-data: It highlights experience in...
-data: [END]
-```
+### Other Endpoints
 
-### Clear Session Index
-
-```http
-POST /index/clear?session_id=user123
-```
-
-### Clear Session Memory
-
-```http
-POST /memory/clear?session_id=user123
-```
+- `GET /health` — Health check
+- `GET /stats/{session_id}` — Session statistics
+- `POST /index/clear?session_id=xxx` — Clear index
+- `POST /memory/clear?session_id=xxx` — Clear memory
 
 ---
 
 ## 🎯 Retrieval Strategy
 
-The system uses **intent-aware retrieval** to optimize context selection:
+The system uses **intent-aware retrieval**:
 
-| Query Pattern | Detection | Retrieval Strategy |
-|---------------|-----------|-------------------|
-| "Summarize the document" | Keyword match | **All chunks** from active file |
-| "What is this document about?" | Keyword match | **All chunks** from active file |
-| "Overview of the document" | Keyword match | **All chunks** from active file |
-| "What skills are mentioned?" | Semantic | **Top-K** (default: 4) via FAISS |
-| "Where is Python used?" | Semantic | **Top-K** with active-file filter |
-
-### Intent Detection Triggers
-
-```python
-DOC_LEVEL_TRIGGERS = [
-    "summary of the document",
-    "summarize the document",
-    "summarize this document",
-    "what is this document",
-    "describe this document",
-    "what kind of document",
-    "overview of the document",
-    "summary",
-]
-```
-
-### Why This Matters
-
-| Problem | Solution |
-|---------|----------|
-| Empty summaries from top-k only | Full-document retrieval for summary queries |
-| Cross-document contamination | Active-file filtering |
-| Hallucinated context | Strict source scoping |
+| Query Pattern | Strategy |
+|---------------|----------|
+| "Summarize", "Overview" | Top chunks from active file |
+| Fact-based queries | Semantic Top-K via FAISS |
 
 ---
 
 ## 📊 Evaluation Framework
 
-Comprehensive evaluation with **intrinsic** (retrieval quality) and **extrinsic** (answer quality) metrics.
-
-### Metrics Overview
-
-| Category | Metric | Description |
-|----------|--------|-------------|
-| **Intrinsic** | Precision@K | Fraction of retrieved docs that are relevant |
-| | Recall@K | Fraction of relevant docs that are retrieved |
-| | MRR | Mean Reciprocal Rank - position of first relevant result |
-| | NDCG | Normalized Discounted Cumulative Gain - ranking quality |
-| | Similarity Stats | Embedding similarity distribution |
-| **Extrinsic** | Answer Relevance | How well answer addresses the question (0-100) |
-| | Faithfulness | Is answer grounded in retrieved context (0-100) |
-| | Answer Similarity | Fuzzy match with expected answer (0-100) |
-| | Task Success Rate | Binary success/fail for specific task types |
-| | Hallucination Score | Facts not in source documents (lower is better) |
-
-### Prepare Test Data
-
-Create `eval_data.jsonl`:
-```jsonl
-{"question": "What programming languages are mentioned?", "expected_answer": "Python, JavaScript, SQL", "task_type": "factual", "difficulty": "easy"}
-{"question": "Summarize the document", "expected_answer": "A professional resume for a software engineer", "task_type": "summary", "difficulty": "medium"}
-{"question": "What certifications does the person have?", "expected_answer": "AWS Machine Learning Associate", "task_type": "extraction", "difficulty": "easy"}
-```
-
-### Run Evaluation
+Run evaluation with built-in metrics:
 
 ```bash
-# Basic evaluation
-python -m app.evaluation --eval-file eval_data.jsonl
-
-# Save results to JSON
 python -m app.evaluation --eval-file eval_data.jsonl --output results.json
 ```
 
-### Sample Output
-
-```
-================================================================================
-RAG SYSTEM EVALUATION REPORT
-================================================================================
-Timestamp: 2024-12-20T15:30:00
-Samples Evaluated: 10
-
-----------------------------------------
-INTRINSIC METRICS (Retrieval Quality)
-----------------------------------------
-  Precision@K:      0.8500
-  Recall@K:         0.9000
-  MRR:              0.9200
-  NDCG:             0.8800
-  Avg Similarity:   0.7650
-
-----------------------------------------
-EXTRINSIC METRICS (Answer Quality)
-----------------------------------------
-  Answer Relevance: 82.50/100
-  Faithfulness:     78.30/100
-  Answer Similarity:71.20/100
-  Task Success Rate:80.00%
-  Hallucination:    21.70/100 (lower is better)
-  Avg Latency:      1250ms
-
-----------------------------------------
-METRICS BY TASK TYPE
-----------------------------------------
-  [SUMMARY] (n=3)
-    Precision:    0.9000
-    Success Rate: 100.00%
-
-  [FACTUAL] (n=4)
-    Precision:    0.8500
-    Success Rate: 75.00%
-
-  [EXTRACTION] (n=3)
-    Precision:    0.8000
-    Success Rate: 66.67%
-================================================================================
-```
-
----
-
-## 🐳 Docker Deployment
-
-### Prerequisites for GPU
-
-```bash
-# Verify NVIDIA driver
-nvidia-smi
-
-# Install NVIDIA Container Toolkit (if not installed)
-distribution=$(. /etc/os-release;echo $ID$VERSION_ID)
-curl -s -L https://nvidia.github.io/nvidia-docker/gpgkey | sudo apt-key add -
-curl -s -L https://nvidia.github.io/nvidia-docker/$distribution/nvidia-docker.list | sudo tee /etc/apt/sources.list.d/nvidia-docker.list
-sudo apt-get update && sudo apt-get install -y nvidia-container-toolkit
-sudo systemctl restart docker
-```
-
-### GPU-Accelerated (Recommended)
-
-```bash
-# Ensure NVIDIA Container Toolkit is installed
-docker compose up --build
-```
-
-### CPU-Only
-
-```bash
-# Modify docker-compose.yml to remove GPU reservation
-docker compose up --build
-```
-
-### Docker Compose Configuration
-
-```yaml
-services:
-  rag-api:
-    build: .
-    ports:
-      - "8000:8000"
-    volumes:
-      - ./data:/app/data
-    environment:
-      - NVIDIA_VISIBLE_DEVICES=all
-    deploy:
-      resources:
-        reservations:
-          devices:
-            - driver: nvidia
-              count: all
-              capabilities: [gpu]
-```
+**Metrics:** Precision@K, Recall@K, MRR, NDCG, Answer Relevance, Faithfulness, Task Success Rate
 
 ---
 
 ## ⚙️ Configuration
 
-All settings via environment variables or `.env` file:
-
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `DATA_DIR` | `data` | Base data directory |
-| `RAW_DIR` | `data/raw` | Uploaded documents |
-| `INDEX_DIR` | `data/index` | FAISS indexes |
-| `EMBED_MODEL` | `intfloat/e5-small-v2` | Embedding model |
-| `TOP_K` | `4` | Retrieval count |
-| `CHUNK_MAX_CHARS` | `1400` | Max chunk size |
-| `CHUNK_OVERLAP_CHARS` | `250` | Chunk overlap |
-| `OLLAMA_ENABLED` | `true` | Use Ollama |
 | `OLLAMA_BASE_URL` | `http://localhost:11434` | Ollama endpoint |
-| `OLLAMA_MODEL` | `mistral` | LLM model |
-| `MAX_NEW_TOKENS` | `256` | Generation limit |
-| `TEMPERATURE` | `0.2` | Sampling temperature |
+| `OLLAMA_MODEL` | `llama3.2` | Model name |
+| `EMBED_MODEL` | `intfloat/e5-small-v2` | Embedding model |
+| `TOP_K` | `4` | Chunks to retrieve |
+| `CHUNK_MAX_CHARS` | `1000` | Max chunk size |
+| `MAX_NEW_TOKENS` | `300` | Generation limit |
+| `TEMPERATURE` | `0.3` | Sampling temperature |
 
 ---
 
-## ⚠️ Known Limitations
+## 🐛 Troubleshooting
 
-| Limitation | Mitigation |
-|------------|------------|
-| Single-node FAISS | Suitable for demo/small-scale; use Pinecone/Weaviate for production |
-| No authentication | Add OAuth2/JWT for production deployment |
-| In-memory session state | Add Redis for horizontal scaling |
-| Ollama dependency | Ensure Ollama is running before API starts |
+| Issue | Solution |
+|-------|----------|
+| "Connection refused" | Ensure Ollama is running: `ollama serve` |
+| Word repetition | Use latest `App.jsx` or disable streaming |
+| Slow responses | First request loads model; use smaller model |
+| Module not found | Activate venv, run `pip install -r requirements.txt` |
 
 ---
 
 ## 🗺 Future Roadmap
 
-- [ ] **Hybrid Retrieval** — BM25 + FAISS fusion
-- [ ] **Multi-Document Selection** — Query across multiple active files
-- [ ] **Chunk-Level Citations** — UI displays source chunks with highlights
-- [ ] **Redis Session Store** — Horizontal scaling support
-- [ ] **Authentication** — OAuth2 / API key support
-- [ ] **Observability** — OpenTelemetry tracing + Prometheus metrics
-- [ ] **PDF Support** — PyMuPDF integration
-- [ ] **Reranking** — Cross-encoder reranking for improved precision
+- [ ] PDF Support
+- [ ] Hybrid Retrieval (BM25 + FAISS)
+- [ ] Multi-Document Selection
+- [ ] Source Highlighting in UI
+- [ ] Authentication
+- [ ] Redis Session Store
 
 ---
 
@@ -610,15 +428,8 @@ All settings via environment variables or `.env` file:
 **Jeevan Reddy**  
 Software Engineer | ML/NLP Enthusiast
 
-[![LinkedIn](https://img.shields.io/badge/LinkedIn-Connect-blue)](https://linkedin.com/in/yourprofile)
-[![GitHub](https://img.shields.io/badge/GitHub-Follow-black)](https://github.com/yourusername)
+[![GitHub](https://img.shields.io/badge/GitHub-Follow-black)](https://github.com/JeevanReddy0828)
 
----
-## 📌 Resume Bullet Point
-
-> Designed and built a **production-grade local RAG system** using **PyTorch, CUDA, Mistral-7B, FAISS, and FastAPI** with **intent-aware retrieval** (full-document vs. semantic top-k), **session isolation**, **SSE streaming**, and a **built-in evaluation framework** — demonstrating GPU-accelerated ML inference and production patterns for document Q&A without external API dependencies.
-
----
 
 ## 📜 License
 
